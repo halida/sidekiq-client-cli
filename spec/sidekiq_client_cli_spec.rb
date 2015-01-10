@@ -179,6 +179,8 @@ describe SidekiqClientCLI do
   describe '#push_argument' do
     let(:settings) { double("settings", :queue => default_queue, :retry => default_retry_option) }
     let(:klass1) { "FirstWorker" }
+    let(:klass1_arg1) { "2015-01-01" }
+    let(:klass1_arg2) { "some string variable" }
     let(:client) { SidekiqClientCLI.new }
 
     before(:each) do
@@ -242,6 +244,21 @@ describe SidekiqClientCLI do
       out.should include("Failed to push")
     end
 
+    it "pushes a worker with one arg" do
+      Sidekiq::Client.should_receive(:push).with('class' => klass1,
+                                                 'args' => [klass1_arg1],
+                                                 'queue' => default_queue,
+                                                 'retry' => default_retry_option)
+      client.__send__(:push_argument, "#{klass1}[#{klass1_arg1}]").should eq true
+    end
+
+    it "pushes a worker with two args" do
+      Sidekiq::Client.should_receive(:push).with('class' => klass1,
+                                                 'args' => [klass1_arg1,klass1_arg2],
+                                                 'queue' => default_queue,
+                                                 'retry' => default_retry_option)
+      client.__send__(:push_argument, "#{klass1}[#{klass1_arg1},#{klass1_arg2}]").should eq true
+    end
   end
 
   describe 'cast_retry_option' do
@@ -267,6 +284,35 @@ describe SidekiqClientCLI do
       subject.cast_retry_option('42').should == 42
     end
 
+  end
+
+  describe 'parse_task_string' do
+    let(:client) { SidekiqClientCLI.new }
+    it 'parses a task without args' do
+      expected = "SomeTaskName"
+      name, args = client.send(:parse_task_string, expected)
+      name.should eq expected
+      args.should eq []
+    end
+
+    it 'parses a task with one arg' do
+      expected = "SomeTaskName"
+      expected_arg = "arg1"
+      name, args = client.send(:parse_task_string, "#{expected}[#{expected_arg}]")
+
+      name.should eq expected
+      args.should eq [expected_arg]
+    end
+
+    it 'parses a task with two args' do
+      expected = "SomeTaskName"
+      expected_args = ["arg1", "arg2"]
+      name, args = client.send(:parse_task_string,
+                               "#{expected}[#{expected_args[0]},#{expected_args[1]}]")
+
+      name.should eq expected
+      args.should eq expected_args
+    end
   end
 
 end

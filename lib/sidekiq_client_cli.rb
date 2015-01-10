@@ -52,9 +52,10 @@ class SidekiqClientCLI
   private
 
   def push_argument(arg)
-    jid = Sidekiq::Client.push({ 'class' => arg,
+    klass, klass_args = parse_task_string(arg)
+    jid = Sidekiq::Client.push({ 'class' => klass,
                                  'queue' => settings.queue,
-                                 'args'  => [],
+                                 'args'  => klass_args,
                                  'retry' => settings.retry })
     p "Posted #{arg} to queue '#{settings.queue}', Job ID : #{jid}, Retry : #{settings.retry}"
     true
@@ -63,4 +64,27 @@ class SidekiqClientCLI
     false
   end
 
+
+  # pilfered from rake
+  # commas within args are not supported
+  def parse_task_string(string)
+    /^([^\[]+)(?:\[(.*)\])$/ =~ string.to_s
+
+    name           = $1
+    remaining_args = $2
+
+    return string, [] unless name
+    return name,   [] if     remaining_args.empty?
+
+    args = []
+
+    begin
+      /((?:[^\\,]|\\.)*?)\s*(?:,\s*(.*))?$/ =~ remaining_args
+
+      remaining_args = $2
+      args << $1.gsub(/\\(.)/, '\1')
+    end while remaining_args
+
+    return name, args
+  end
 end

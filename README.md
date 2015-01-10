@@ -45,6 +45,10 @@ You can also specify the number of times a job should be retried, if it fails :
 
     $ sidekiq-client -r 5 push MyWorker OtherWorker
 
+If your job requires arguments, you can specify them a la Rake (it uses Rake's task parser):
+
+    $ sidekiq-client push MyWorker[my-arg,my-other-arg]
+
 For help :
 
     $ sidekiq-client --help
