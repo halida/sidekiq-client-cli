@@ -57,7 +57,7 @@ class SidekiqClientCLI
                                  'queue' => settings.queue,
                                  'args'  => klass_args,
                                  'retry' => settings.retry })
-    p "Posted #{arg} to queue '#{settings.queue}', Job ID : #{jid}, Retry : #{settings.retry}"
+    p "Posted #{klass} to queue '#{settings.queue}', Job ID : #{jid}, Retry : #{settings.retry}, Args : #{klass_args}"
     true
   rescue StandardError => ex
     p "Failed to push to queue : #{ex.message}"
